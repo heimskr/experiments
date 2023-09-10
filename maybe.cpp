@@ -1,3 +1,25 @@
+/* This program was created in response to a question about whether there could be a better way to handle errors than
+ * the plain C way if you have no exceptions and no standard library. (The standard library includes here are for the
+ * final example, which relies on an RAII-ish type to demonstrate the necessity of ref-qualifiers to specify overloads
+ * for rvalues.
+ *
+ * Output:
+ *     (&)
+ *     m1 data: 42
+ *     (&)
+ *     (&)
+ *     (&)
+ *     m2 data data: 42
+ *     m3 error: Nope.
+ *     m4 error: Not here either.
+ *     (&)
+ *     m5 data: 69
+ *     (&&)
+ *     666
+ *     (&&)
+ *     some string ineligible for short string optimization
+ */
+
 #include <stdlib.h>
 #include <stdio.h>
 
