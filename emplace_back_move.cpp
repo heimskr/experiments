@@ -1,5 +1,5 @@
 // Demonstrates the behavior of emplace_back and push_back with lvalue vs. rvalue references.
-// In this case, it's the same.
+// In this case, it's the same between emplace_back and push_back.
 
 #include <iostream>
 #include <vector>
