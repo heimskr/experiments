@@ -43,7 +43,7 @@ inline std::string generateString(std::mt19937_64 &rng, size_t length, std::stri
 }
 
 template <template <typename...> typename M, size_t Length, bool Prefixed, uint64_t Seed = 64>
-void test(std::string_view name, uint64_t count) {
+uint64_t test(std::string_view name, uint64_t count) {
 	M<std::string, std::string> map;
 	std::mt19937_64 rng(Seed);
 
@@ -53,11 +53,13 @@ void test(std::string_view name, uint64_t count) {
 		map[string] = std::move(string);
 	}
 
-	volatile size_t sum = 0;
+	volatile uint64_t sum = 0;
 	Timer timer{"{}: iterate", name};
 	for (const auto &[key, value]: map) {
 		sum += value.size();
 	}
+
+	return sum;
 }
 
 int main() {
