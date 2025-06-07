@@ -48,7 +48,7 @@ uint64_t test(std::string_view name, uint64_t count) {
 	std::mt19937_64 rng(Seed);
 
 	for (uint64_t i = 0; i < count; ++i) {
-		std::string string = generateString(rng, Length, Prefixed? "prefix" : std::string_view{});
+		std::string string = generateString(rng, Length, Prefixed? "" : std::string_view{});
 		Timer timer{"{}: emplace", name};
 		map[string] = std::move(string);
 	}
@@ -64,7 +64,7 @@ uint64_t test(std::string_view name, uint64_t count) {
 
 int main() {
 	constexpr uint_fast64_t SEED = 64;
-	constexpr uint64_t COUNT_MAX = 10'000'000;
+	constexpr uint64_t COUNT_MAX = 1'000'000;
 	constexpr size_t LENGTH = 32;
 
 	Stopwatch stopwatch;
