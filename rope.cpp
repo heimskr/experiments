@@ -333,8 +333,9 @@ void timing() {
 		Plain p0{strings[0]};
 		Plain p1{strings[1]};
 		Plain p2{strings[2]};
-		Rope r1{p0, p1, p2};
-		Rope r2{p0, p1, p2};
+		Substring s1{p1, std::min(strings[1].size(), 20uz), std::max(strings[1].size(), 20uz) - 20};
+		Rope r1{p0, s1, p2};
+		Rope r2{p0, s1, p2};
 
 		{
 			Timer timer;
