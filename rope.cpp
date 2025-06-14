@@ -77,6 +77,10 @@ struct Rope: String {
 };
 
 bool String::operator==(const String &other) const {
+	if (this == &other) {
+		return true;
+	}
+
 	if (size != other.size) {
 		return false;
 	}
@@ -309,11 +313,13 @@ void timing() {
 	std::chrono::nanoseconds with_smart_compare{};
 	std::chrono::nanoseconds with_resolve{};
 
+	constexpr size_t bound = 1'000;
+
 	std::default_random_engine rng{1248163264128256};
 	std::uniform_int_distribution<char> printable{'!', '~'};
-	std::uniform_int_distribution<size_t> length{0, 8192};
+	std::uniform_int_distribution<size_t> length{0uz, bound};
 
-	constexpr size_t iters = 10'000;
+	constexpr size_t iters = 100 * 10000;
 
 	size_t smart_equal = 0;
 	size_t resolve_equal = 0;
@@ -350,7 +356,7 @@ void timing() {
 		}
 	}
 
-	std::println("Total time for {} iterations: {:.3f} ms", iters, outer_timer.stop().count() / 1'000'000.0);
+	std::println("Total time for {} iterations and upper length bound of {}: {:.3f} ms", iters, bound, outer_timer.stop().count() / 1'000'000.0);
 	std::println("Smart compare time:   {:.3f} ms/iter", with_smart_compare.count() / 1'000'000.0);
 	std::println("Resolve compare time: {:.3f} ms/iter", with_resolve.count() / 1'000'000.0);
 	std::println("Reduction: {:.3f}%", 100 - 100 * static_cast<double>(with_smart_compare.count()) / with_resolve.count());
