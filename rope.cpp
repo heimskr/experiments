@@ -116,7 +116,66 @@ bool Substring::operator==(const String &other) const {
 		std::generator<std::string_view> gen1 = iteratePieces(0, std::string::npos);
 		std::generator<std::string_view> gen2 = other.iteratePieces(0, std::string::npos);
 
+		auto iter1 = gen1.begin();
+		auto iter2 = gen2.begin();
 
+		if (iter1 == gen1.end() || iter2 == gen2.end()) {
+			assert(iter1 == gen1.end());
+			assert(iter2 == gen2.end());
+			return false;
+		}
+
+		std::string_view view1 = *iter1;
+		std::string_view view2 = *iter2;
+
+		for (;;) {
+			if (iter1 == gen1.end() && iter2 == gen2.end()) {
+				return true;
+			}
+
+			bool advance1 = true;
+			bool advance2 = true;
+
+			if (view1.size() < view2.size()) {
+				if (view1 != view2.substr(0, view1.size())) {
+					return false;
+				}
+
+				view2.remove_prefix(view1.size());
+				advance2 = false;
+			} else if (view1.size() > view2.size()) {
+				if (view1.substr(0, view2.size()) != view2) {
+					return false;
+				}
+
+				view1.remove_prefix(view2.size());
+				advance1 = false;
+			} else if (view1 != view2) {
+				return false;
+			}
+
+			if (advance1) {
+				do {
+					if (iter1 == gen1.end()) {
+						break;
+					}
+
+					view1 = *iter1;
+					++iter1;
+				} while (view1.empty());
+			}
+
+			if (advance2) {
+				do {
+					if (iter2 == gen2.end()) {
+						break;
+					}
+
+					view2 = *iter2;
+					++iter2;
+				} while (view2.empty());
+			}
+		}
 	}
 
 	if (auto *plain = dynamic_cast<const Plain *>(&other)) {
