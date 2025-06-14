@@ -357,8 +357,8 @@ void timing() {
 	}
 
 	std::println("Total time for {} iterations and upper length bound of {}: {:.3f} ms", iters, bound, outer_timer.stop().count() / 1'000'000.0);
-	std::println("Smart compare time:   {:.3f} ms/iter", with_smart_compare.count() / 1'000'000.0);
-	std::println("Resolve compare time: {:.3f} ms/iter", with_resolve.count() / 1'000'000.0);
+	std::println("Smart compare time:   {:.3f} ms", with_smart_compare.count() / 1'000'000.0);
+	std::println("Resolve compare time: {:.3f} ms", with_resolve.count() / 1'000'000.0);
 	std::println("Reduction: {:.3f}%", 100 - 100 * static_cast<double>(with_smart_compare.count()) / with_resolve.count());
 
 	assert(smart_equal == iters);
