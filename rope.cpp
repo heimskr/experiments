@@ -6,49 +6,50 @@
 #include <string>
 #include <vector>
 
-struct String {
-	virtual ~String() = default;
+class String {
+	public:
+		size_t size = 0;
 
-	bool operator==(const String &other) const;
-	virtual std::generator<std::string_view> iteratePieces(size_t pos, size_t n = std::string::npos) const = 0;
-	virtual size_t getSize() const = 0;
+		virtual ~String() = default;
 
-	std::string resolve(size_t pos = 0, size_t n = std::string::npos);
+		bool operator==(const String &other) const;
+		virtual std::generator<std::string_view> iteratePieces(size_t pos, size_t n = std::string::npos) const = 0;
+
+		std::string resolve(size_t pos = 0, size_t n = std::string::npos);
+
+	protected:
+		String(size_t size):
+			size(size) {}
 };
 
 struct Plain: String {
 	std::string chars;
 
 	Plain(std::string chars):
+		String(chars.size()),
 		chars(std::move(chars)) {}
 
 	std::generator<std::string_view> iteratePieces(size_t pos, size_t n) const final;
-
-	size_t getSize() const final {
-		return chars.size();
-	}
 };
 
 struct Substring: String {
 	String *parent = nullptr;
 	size_t offset = 0;
 	size_t extent = 0;
-	size_t size = 0;
 
 	Substring(String &parent, size_t offset = 0, size_t extent = 0):
+		String(0),
 		parent(&parent),
 		offset(offset),
 		extent(extent) {
-			if (parent.getSize() < offset) {
+			if (parent.size < offset) {
 				throw std::out_of_range("Invalid substring");
 			}
 
-			size = std::min(parent.getSize() - offset, extent);
+			size = std::min(parent.size - offset, extent);
 		}
 
 	std::generator<std::string_view> iteratePieces(size_t pos, size_t n) const final;
-
-	size_t getSize() const final { return size; }
 };
 
 struct Rope: String {
@@ -58,27 +59,25 @@ struct Rope: String {
 	size_t size = 0;
 
 	Rope(String &fiber0):
-		fiber0(&fiber0),
-		size(fiber0.getSize()) {}
+		String(fiber0.size),
+		fiber0(&fiber0) {}
 
 	Rope(String &fiber0, String &fiber1):
+		String(fiber0.size + fiber1.size),
 		fiber0(&fiber0),
-		fiber1(&fiber1),
-		size(fiber0.getSize() + fiber1.getSize()) {}
+		fiber1(&fiber1) {}
 
 	Rope(String &fiber0, String &fiber1, String &fiber2):
+		String(fiber0.size + fiber1.size + fiber2.size),
 		fiber0(&fiber0),
 		fiber1(&fiber1),
-		fiber2(&fiber2),
-		size(fiber0.getSize() + fiber1.getSize() + fiber2.getSize()) {}
+		fiber2(&fiber2) {}
 
 	std::generator<std::string_view> iteratePieces(size_t pos, size_t n) const final;
-
-	size_t getSize() const final { return size; }
 };
 
 bool String::operator==(const String &other) const {
-	if (getSize() != other.getSize()) {
+	if (size != other.size) {
 		return false;
 	}
 
@@ -126,11 +125,11 @@ bool String::operator==(const String &other) const {
 
 			view1.remove_prefix(view2.size());
 			advance(iter2, gen2, view2);
-		} else if (view1 != view2) {
-			return false;
-		} else {
+		} else if (view1 == view2) {
 			advance(iter1, gen1, view1);
 			advance(iter2, gen2, view2);
+		} else {
+			return false;
 		}
 	}
 }
