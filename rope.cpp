@@ -1,7 +1,10 @@
 #include <cassert>
+#include <chrono>
 #include <generator>
 #include <print>
+#include <random>
 #include <string>
+#include <vector>
 
 struct String {
 	virtual ~String() = default;
@@ -293,6 +296,68 @@ std::string String::resolve(size_t pos, size_t n) {
 	return out;
 }
 
+class Timer {
+	public:
+		std::chrono::nanoseconds stop() {
+			return std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now() - start);
+		}
+
+	private:
+		std::chrono::system_clock::time_point start = std::chrono::system_clock::now();
+};
+
+void timing() {
+	std::chrono::nanoseconds with_smart_compare{};
+	std::chrono::nanoseconds with_resolve{};
+
+	std::default_random_engine rng{std::random_device{}()};
+	std::uniform_int_distribution<char> printable{'!', '~'};
+	std::uniform_int_distribution<size_t> length{0, 8192};
+
+	constexpr size_t iters = 10'000;
+
+	size_t smart_equal = 0;
+	size_t resolve_equal = 0;
+
+	Timer outer_timer;
+
+	for (size_t i = 0; i < iters; ++i) {
+		std::vector<std::string> strings(3);
+
+		for (std::string &string: strings) {
+			string = std::string(length(rng), '\0');
+			for (char &ch: string) {
+				ch = printable(rng);
+			}
+		}
+
+		Plain p0{strings[0]};
+		Plain p1{strings[1]};
+		Plain p2{strings[2]};
+		Rope r1{p0, p1, p2};
+		Rope r2{p0, p1, p2};
+
+		{
+			Timer timer;
+			smart_equal += r1 == r2;
+			with_smart_compare += timer.stop();
+		}
+
+		{
+			Timer timer;
+			resolve_equal += r1.resolve() == r2.resolve();
+			with_resolve += timer.stop();
+		}
+	}
+
+	std::println("Total time: {:.3f} ms", outer_timer.stop().count() / 1'000'000.0);
+	std::println("Smart compare time:   {:.3f} ms/iter", with_smart_compare.count() / 1'000'000.0);
+	std::println("Resolve compare time: {:.3f} ms/iter", with_resolve.count() / 1'000'000.0);
+
+	assert(smart_equal == iters);
+	assert(resolve_equal == iters);
+}
+
 int main() {
 	Plain p1{"foobar"};
 	Plain p2{"_"};
@@ -310,5 +375,7 @@ int main() {
 	assert(r2 == r2p);
 	assert(r2 != r2p2);
 
-	std::println("Hooray.");
+	timing();
+
+	std::println("Done.");
 }
