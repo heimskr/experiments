@@ -313,13 +313,12 @@ void timing() {
 	std::chrono::nanoseconds with_smart_compare{};
 	std::chrono::nanoseconds with_resolve{};
 
-	constexpr size_t bound = 1'000;
+	constexpr size_t bound = 10'000;
+	constexpr size_t iters = 100'000;
 
 	std::default_random_engine rng{1248163264128256};
 	std::uniform_int_distribution<char> printable{'!', '~'};
 	std::uniform_int_distribution<size_t> length{0uz, bound};
-
-	constexpr size_t iters = 100 * 10000;
 
 	size_t smart_equal = 0;
 	size_t resolve_equal = 0;
@@ -339,9 +338,10 @@ void timing() {
 		Plain p0{strings[0]};
 		Plain p1{strings[1]};
 		Plain p2{strings[2]};
+		Plain p3{strings[2]};
 		Substring s1{p1, std::min(strings[1].size(), 20uz), std::max(strings[1].size(), 20uz) - 20};
 		Rope r1{p0, s1, p2};
-		Rope r2{p0, s1, p2};
+		Rope r2{p0, s1, p3};
 
 		{
 			Timer timer;
