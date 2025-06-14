@@ -79,7 +79,6 @@ struct Rope: String {
 
 bool String::operator==(const String &other) const {
 	if (getSize() != other.getSize()) {
-		std::println("size: {} != {}", getSize(), other.getSize());
 		return false;
 	}
 
@@ -90,7 +89,6 @@ bool String::operator==(const String &other) const {
 	auto iter2 = gen2.begin();
 
 	if (iter1 == gen1.end() || iter2 == gen2.end()) {
-		std::println("ends: {} and {}. false.", iter1 == gen1.end(), iter2 == gen2.end());
 		assert(iter1 == gen1.end());
 		assert(iter2 == gen2.end());
 		return false;
@@ -101,7 +99,6 @@ bool String::operator==(const String &other) const {
 
 	for (;;) {
 		if (iter1 == gen1.end() && iter2 == gen2.end()) {
-			std::println("Both ends! true.");
 			return true;
 		}
 
@@ -110,24 +107,19 @@ bool String::operator==(const String &other) const {
 
 		if (view1.size() < view2.size()) {
 			if (view1 != view2.substr(0, view1.size())) {
-				std::println("[{}] {{{}}} != {{{}}}", __LINE__, view1, view2.substr(0, view1.size()));
 				return false;
 			}
 
-			std::println("[{}] 1 = {{{}}}, 2 = {{{}}} -> {{{}}}", __LINE__, view1, view2, view2.substr(view1.size()));
 			view2.remove_prefix(view1.size());
 			advance2 = false;
 		} else if (view1.size() > view2.size()) {
 			if (view1.substr(0, view2.size()) != view2) {
-				std::println("[{}] {{{}}} != {{{}}}", __LINE__, view1.substr(0, view2.size()), view2);
 				return false;
 			}
 
-			std::println("[{}] 1 = {{{}}} -> {{{}}}, 2 = {{{}}}", __LINE__, view1, view1.substr(view2.size()), view2);
 			view1.remove_prefix(view2.size());
 			advance1 = false;
 		} else if (view1 != view2) {
-			std::println("[{}] {{{}}} != {{{}}}", __LINE__, view1, view2);
 			return false;
 		}
 
