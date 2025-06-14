@@ -1,9 +1,6 @@
 #include <cassert>
-#include <cstring>
-#include <functional>
 #include <generator>
 #include <print>
-#include <span>
 #include <string>
 
 struct String {
@@ -312,14 +309,13 @@ int main() {
 	Substring s1{p1, 1, 3};
 	Rope r1{p1, p2, s1};
 	Rope r2{r1, p2, r1};
-
 	Plain r2p{r2.resolve()};
-
 	Plain r2p2{r2.resolve()};
 	r2p2.chars.back() = '!';
 
-	std::println("Rope: {{{}}}", r2.resolve());
-
+	assert(r1.resolve() == "foobar_oob");
+	assert(p1.resolve() == "foobar");
+	assert(s1.resolve() == "oob");
 	assert(r2p.chars == "foobar_oob_foobar_oob");
 	assert(r2 == r2p);
 	assert(r2 != r2p2);
