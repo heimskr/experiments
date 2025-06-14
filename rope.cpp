@@ -9,12 +9,8 @@
 struct String {
 	virtual ~String() = default;
 
-	virtual bool operator==(const String &other) const {
-		throw std::runtime_error("Unimplemented");
-	}
-
+	bool operator==(const String &other) const;
 	virtual std::generator<std::string_view> iteratePieces(size_t pos, size_t n = std::string::npos) const = 0;
-
 	virtual size_t getSize() const = 0;
 
 	std::string resolve(size_t pos = 0, size_t n = std::string::npos);
@@ -25,8 +21,6 @@ struct Plain: String {
 
 	Plain(std::string chars):
 		chars(std::move(chars)) {}
-
-	bool operator==(const String &other) const final;
 
 	std::generator<std::string_view> iteratePieces(size_t pos, size_t n) const final;
 
@@ -51,8 +45,6 @@ struct Substring: String {
 
 			size = std::min(parent.getSize() - offset, extent);
 		}
-
-	bool operator==(const String &other) const final;
 
 	std::generator<std::string_view> iteratePieces(size_t pos, size_t n) const final;
 
@@ -80,110 +72,85 @@ struct Rope: String {
 		fiber2(&fiber2),
 		size(fiber0.getSize() + fiber1.getSize() + fiber2.getSize()) {}
 
-	// bool operator==(const String &other) const final;
 	std::generator<std::string_view> iteratePieces(size_t pos, size_t n) const final;
 
 	size_t getSize() const final { return size; }
 };
 
-bool Plain::operator==(const String &other) const {
-	if (auto *rope = dynamic_cast<const Rope *>(&other)) {
-		return rope->operator==(*this);
+bool String::operator==(const String &other) const {
+	if (getSize() != other.getSize()) {
+		std::println("size: {} != {}", getSize(), other.getSize());
+		return false;
 	}
 
-	if (auto *substring = dynamic_cast<const Substring *>(&other)) {
-		return substring->operator==(*this);
+	std::generator<std::string_view> gen1 = iteratePieces(0, std::string::npos);
+	std::generator<std::string_view> gen2 = other.iteratePieces(0, std::string::npos);
+
+	auto iter1 = gen1.begin();
+	auto iter2 = gen2.begin();
+
+	if (iter1 == gen1.end() || iter2 == gen2.end()) {
+		std::println("ends: {} and {}. false.", iter1 == gen1.end(), iter2 == gen2.end());
+		assert(iter1 == gen1.end());
+		assert(iter2 == gen2.end());
+		return false;
 	}
 
-	if (auto *plain = dynamic_cast<const Plain *>(&other)) {
-		return chars == plain->chars;
-	}
+	std::string_view view1 = *iter1;
+	std::string_view view2 = *iter2;
 
-	assert(false);
-	return false;
-}
-
-bool Substring::operator==(const String &other) const {
-	if (auto *rope = dynamic_cast<const Rope *>(&other)) {
-		return rope->operator==(*this);
-	}
-
-	if (auto *substring = dynamic_cast<const Substring *>(&other)) {
-		if (getSize() != substring->getSize()) {
-			return false;
+	for (;;) {
+		if (iter1 == gen1.end() && iter2 == gen2.end()) {
+			std::println("Both ends! true.");
+			return true;
 		}
 
-		std::generator<std::string_view> gen1 = iteratePieces(0, std::string::npos);
-		std::generator<std::string_view> gen2 = other.iteratePieces(0, std::string::npos);
+		bool advance1 = true;
+		bool advance2 = true;
 
-		auto iter1 = gen1.begin();
-		auto iter2 = gen2.begin();
-
-		if (iter1 == gen1.end() || iter2 == gen2.end()) {
-			assert(iter1 == gen1.end());
-			assert(iter2 == gen2.end());
-			return false;
-		}
-
-		std::string_view view1 = *iter1;
-		std::string_view view2 = *iter2;
-
-		for (;;) {
-			if (iter1 == gen1.end() && iter2 == gen2.end()) {
-				return true;
-			}
-
-			bool advance1 = true;
-			bool advance2 = true;
-
-			if (view1.size() < view2.size()) {
-				if (view1 != view2.substr(0, view1.size())) {
-					return false;
-				}
-
-				view2.remove_prefix(view1.size());
-				advance2 = false;
-			} else if (view1.size() > view2.size()) {
-				if (view1.substr(0, view2.size()) != view2) {
-					return false;
-				}
-
-				view1.remove_prefix(view2.size());
-				advance1 = false;
-			} else if (view1 != view2) {
+		if (view1.size() < view2.size()) {
+			if (view1 != view2.substr(0, view1.size())) {
+				std::println("[{}] {{{}}} != {{{}}}", __LINE__, view1, view2.substr(0, view1.size()));
 				return false;
 			}
 
-			if (advance1) {
-				do {
-					if (iter1 == gen1.end()) {
-						break;
-					}
-
-					view1 = *iter1;
-					++iter1;
-				} while (view1.empty());
+			std::println("[{}] 1 = {{{}}}, 2 = {{{}}} -> {{{}}}", __LINE__, view1, view2, view2.substr(view1.size()));
+			view2.remove_prefix(view1.size());
+			advance2 = false;
+		} else if (view1.size() > view2.size()) {
+			if (view1.substr(0, view2.size()) != view2) {
+				std::println("[{}] {{{}}} != {{{}}}", __LINE__, view1.substr(0, view2.size()), view2);
+				return false;
 			}
 
-			if (advance2) {
-				do {
-					if (iter2 == gen2.end()) {
-						break;
-					}
+			std::println("[{}] 1 = {{{}}} -> {{{}}}, 2 = {{{}}}", __LINE__, view1, view1.substr(view2.size()), view2);
+			view1.remove_prefix(view2.size());
+			advance1 = false;
+		} else if (view1 != view2) {
+			std::println("[{}] {{{}}} != {{{}}}", __LINE__, view1, view2);
+			return false;
+		}
 
-					view2 = *iter2;
-					++iter2;
-				} while (view2.empty());
-			}
+		if (advance1) {
+			do {
+				if (++iter1 == gen1.end()) {
+					break;
+				}
+
+				view1 = *iter1;
+			} while (view1.empty());
+		}
+
+		if (advance2) {
+			do {
+				if (++iter2 == gen2.end()) {
+					break;
+				}
+
+				view2 = *iter2;
+			} while (view2.empty());
 		}
 	}
-
-	if (auto *plain = dynamic_cast<const Plain *>(&other)) {
-		// return chars == plain->chars;
-	}
-
-	assert(false);
-	return false;
 }
 
 std::generator<std::string_view> Plain::iteratePieces(size_t pos, size_t n) const {
@@ -354,5 +321,16 @@ int main() {
 	Rope r1{p1, p2, s1};
 	Rope r2{r1, p2, r1};
 
+	Plain r2p{r2.resolve()};
+
+	Plain r2p2{r2.resolve()};
+	r2p2.chars.back() = '!';
+
 	std::println("Rope: {{{}}}", r2.resolve());
+
+	assert(r2p.chars == "foobar_oob_foobar_oob");
+	assert(r2 == r2p);
+	assert(r2 != r2p2);
+
+	std::println("Hooray.");
 }
