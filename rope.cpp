@@ -370,6 +370,7 @@ int main() {
 	assert(r1.resolve() == "foobar_oob");
 	assert(p1.resolve() == "foobar");
 	assert(s1.resolve() == "oob");
+	assert(p1 != p2);
 	assert(r2p.chars == "foobar_oob_foobar_oob");
 	assert(r2 == r2p);
 	assert(r2 != r2p2);
