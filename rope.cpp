@@ -265,12 +265,12 @@ std::generator<std::string_view> Rope::iteratePieces(size_t pos, size_t n) const
 	size_t remaining = n;
 
 	for (;;) {
-		if (n < view.size()) {
-			co_yield view.substr(0, n);
+		if (remaining < view.size()) {
+			co_yield view.substr(0, remaining);
 			co_return;
 		}
 
-		if (n == view.size()) {
+		if (remaining == view.size()) {
 			co_yield view;
 			co_return;
 		}
@@ -309,7 +309,7 @@ void timing() {
 	std::chrono::nanoseconds with_smart_compare{};
 	std::chrono::nanoseconds with_resolve{};
 
-	std::default_random_engine rng{std::random_device{}()};
+	std::default_random_engine rng{1248163264128256};
 	std::uniform_int_distribution<char> printable{'!', '~'};
 	std::uniform_int_distribution<size_t> length{0, 8192};
 
