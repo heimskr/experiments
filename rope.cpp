@@ -349,7 +349,7 @@ void timing() {
 		}
 	}
 
-	std::println("Total time: {:.3f} ms", outer_timer.stop().count() / 1'000'000.0);
+	std::println("Total time for {} iterations: {:.3f} ms", iters, outer_timer.stop().count() / 1'000'000.0);
 	std::println("Smart compare time:   {:.3f} ms/iter", with_smart_compare.count() / 1'000'000.0);
 	std::println("Resolve compare time: {:.3f} ms/iter", with_resolve.count() / 1'000'000.0);
 	std::println("Reduction: {:.3f}%", 100 - 100 * static_cast<double>(with_smart_compare.count()) / with_resolve.count());
