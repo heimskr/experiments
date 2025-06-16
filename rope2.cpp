@@ -419,7 +419,7 @@ void timing() {
 	constexpr size_t bound = 1'000;
 	constexpr size_t iters = 10'000;
 
-	std::default_random_engine rng{1248163264128256};
+	std::default_random_engine rng{static_cast<uint_fast32_t>(1248163264128256)};
 	std::uniform_int_distribution<char> printable{'!', '~'};
 	std::uniform_int_distribution<size_t> length{0uz, bound};
 
