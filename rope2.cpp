@@ -420,7 +420,7 @@ void timing() {
 	constexpr size_t iters = 10'000;
 
 	std::default_random_engine rng{static_cast<uint_fast32_t>(1248163264128256)};
-	std::uniform_int_distribution<char> printable{'!', '~'};
+	std::uniform_int_distribution<signed char> printable{'!', '~'};
 	std::uniform_int_distribution<size_t> length{0uz, bound};
 
 	size_t smart_equal = 0;
