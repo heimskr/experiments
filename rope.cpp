@@ -13,7 +13,7 @@ class String {
 		virtual ~String() = default;
 
 		bool operator==(const String &other) const;
-		virtual std::generator<std::string_view> iteratePieces(size_t pos, size_t n = std::string::npos) const = 0;
+		virtual std::generator<std::string_view> iteratePieces(size_t pos, size_t n) const = 0;
 
 		std::string resolve(size_t pos = 0, size_t n = std::string::npos);
 
@@ -143,7 +143,7 @@ std::generator<std::string_view> Plain::iteratePieces(size_t pos, size_t n) cons
 }
 
 std::generator<std::string_view> Substring::iteratePieces(size_t pos, size_t n) const {
-	std::generator<std::string_view> subgenerator = parent->iteratePieces(offset);
+	std::generator<std::string_view> subgenerator = parent->iteratePieces(offset, std::string::npos);
 	std::string_view view;
 
 	auto iter = subgenerator.begin();
@@ -210,17 +210,17 @@ std::generator<std::string_view> Rope::iteratePieces(size_t pos, size_t n) const
 	assert(fiber0 != nullptr);
 
 	auto generator = [this] -> std::generator<std::string_view> {
-		for (std::string_view view: fiber0->iteratePieces(0)) {
+		for (std::string_view view: fiber0->iteratePieces(0, std::string::npos)) {
 			co_yield view;
 		}
 
 		if (fiber1) {
-			for (std::string_view view: fiber1->iteratePieces(0)) {
+			for (std::string_view view: fiber1->iteratePieces(0, std::string::npos)) {
 				co_yield view;
 			}
 
 			if (fiber2) {
-				for (std::string_view view: fiber2->iteratePieces(0)) {
+				for (std::string_view view: fiber2->iteratePieces(0, std::string::npos)) {
 					co_yield view;
 				}
 			}
@@ -313,8 +313,8 @@ void timing() {
 	std::chrono::nanoseconds with_smart_compare{};
 	std::chrono::nanoseconds with_resolve{};
 
-	constexpr size_t bound = 10'000;
-	constexpr size_t iters = 100'000;
+	constexpr size_t bound = 100'000;
+	constexpr size_t iters = 10'000;
 
 	std::default_random_engine rng{1248163264128256};
 	std::uniform_int_distribution<char> printable{'!', '~'};
