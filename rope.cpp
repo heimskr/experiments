@@ -56,7 +56,6 @@ struct Rope: String {
 	String *fiber0 = nullptr;
 	String *fiber1 = nullptr;
 	String *fiber2 = nullptr;
-	size_t size = 0;
 
 	Rope(String &fiber0):
 		String(fiber0.size),

@@ -165,7 +165,7 @@ class Substring: public String {
 				Type getType() const final { return Type::Substring; }
 
 				void next() final {
-					assert(!subimpl->atEnd());
+					assert(!atEnd());
 					accumulated += (**subimpl).size();
 					++index;
 					subimpl->next();
@@ -179,6 +179,10 @@ class Substring: public String {
 					std::string_view view = **subimpl;
 					while (view.size() + accumulated <= owner.offset) {
 						next();
+						if (subimpl->atEnd()) {
+							return {};
+						}
+						view = **subimpl;
 					}
 					return view.substr(owner.offset - accumulated, owner.extent);
 				}
@@ -254,14 +258,17 @@ class Rope: public String {
 
 				void next() final {
 					assert(!atEnd());
+
+					while (subimpl->atEnd()) {
+						assert(fiberIndex < owner.fiberCount - 1);
+						subimpl = owner.fibers[++fiberIndex]->begin().impl;
+					}
+
 					accumulated += (**subimpl).size();
 					++index;
 					subimpl->next();
-					if (subimpl->atEnd()) {
-						if (atEnd()) {
-							return;
-						}
 
+					if (subimpl->atEnd() && !atEnd()) {
 						assert(fiberIndex < owner.fiberCount - 1);
 						subimpl = owner.fibers[++fiberIndex]->begin().impl;
 					}
