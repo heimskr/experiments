@@ -417,7 +417,7 @@ void timing() {
 	std::chrono::nanoseconds with_smart_compare{};
 	std::chrono::nanoseconds with_resolve{};
 
-	constexpr size_t bound = 100'000;
+	constexpr size_t bound = 1'000;
 	constexpr size_t iters = 10'000;
 
 	std::default_random_engine rng{1248163264128256};
