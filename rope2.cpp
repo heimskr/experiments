@@ -44,7 +44,6 @@ class StringIterator {
 		}
 
 		bool operator==(const StringIterator &other) const {
-			// std::println("{} || {}. type = {}", this == &other, *impl == *other.impl, int(impl->getType()));
 			return this == &other || *impl == *other.impl;
 		}
 };
@@ -277,23 +276,19 @@ class Rope: public String {
 				}
 
 				bool atEnd() const final {
-					// std::println("fiberIndex = {}, owner.fiberCount = {}, subimpl->atEnd() = {}", fiberIndex, owner.fiberCount, subimpl->atEnd());
 					return fiberIndex >= 3 || (fiberIndex == owner.fiberCount - 1 && subimpl->atEnd());
 				}
 
 				bool operator==(const IteratorImpl &other) const final {
 					if (this == &other) {
-						// std::println("Rope: this == &other");
 						return true;
 					}
 
 					if (other.getType() != Type::Rope) {
-						// std::println("Rope: type mismatch");
 						return false;
 					}
 
 					auto &rope = static_cast<const Iterator &>(other);
-					// std::println("return {} && (({} && {}) || ({} == {} && {}))", &owner == &rope.owner, atEnd(), other.atEnd(), index, rope.index, *subimpl == *rope.subimpl);
 					return &owner == &rope.owner && ((atEnd() && other.atEnd()) || (index == rope.index && fiberIndex == rope.fiberIndex && *subimpl == *rope.subimpl));
 				}
 
