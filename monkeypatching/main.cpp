@@ -9,38 +9,56 @@
 #include <typeinfo>
 #include <unistd.h>
 
-void monkey_patch(void *sym, void *jump_target, int offset = 0) {
+static const int PAGE_SIZE = getpagesize();
+
+struct AsmJmp {
+	unsigned char jmp_qword_ptr_rip[6];
+	uint64_t addr;
+} __attribute__((packed));
+
+class Patch {
+	public:
+		Patch(void *page, void *target, const std::array<std::byte, sizeof(AsmJmp)> &old):
+			page(page),
+			target(target),
+			old(old) {}
+
+		void swap() {
+			std::array<std::byte, sizeof(AsmJmp)> new_old;
+			mprotect(page, 2 * PAGE_SIZE, PROT_WRITE);
+			std::memcpy(new_old.data(), target, sizeof(AsmJmp));
+			std::memcpy(target, old.data(), sizeof(AsmJmp));
+			mprotect(page, 2 * PAGE_SIZE, PROT_READ | PROT_EXEC);
+			old = new_old;
+		}
+
+	private:
+		void *page = nullptr;
+		void *target = nullptr;
+		std::array<std::byte, sizeof(AsmJmp)> old{};
+};
+
+Patch monkey_patch(void *sym, void *jump_target, int offset = 0) {
 	// https://blog.llandsmeer.com/tech/2019/06/25/overwrite-a-function.html
-
-    static int PAGE_SIZE = 0;
-
-    if (PAGE_SIZE == 0) {
-		PAGE_SIZE = getpagesize();
-	}
-
     void *page = (void *) ((uintptr_t) sym & (uintptr_t) ~(PAGE_SIZE - 1));
-
-    struct {
-        unsigned char jmp_qword_ptr_rip[6];
-        uint64_t addr;
-    } __attribute__((packed)) asm_jmp_abs = {
-        {0xff, 0x25, 0, 0, 0, 0}, (uint64_t) jump_target
-    };
-
+    AsmJmp asm_jmp_abs{{0xff, 0x25, 0, 0, 0, 0}, (uint64_t) jump_target};
     mprotect(page, 2 * PAGE_SIZE, PROT_WRITE);
     void *target = (void *) ((uintptr_t) sym + offset);
-    memcpy(target, &asm_jmp_abs, sizeof asm_jmp_abs);
+	std::array<std::byte, sizeof(AsmJmp)> old;
+	std::memcpy(old.data(), target, sizeof(AsmJmp));
+    std::memcpy(target, &asm_jmp_abs, sizeof(AsmJmp));
     mprotect(page, 2 * PAGE_SIZE, PROT_READ | PROT_EXEC);
+	return {page, target, old};
 }
 
-void monkey_patch_addr(const char *function, void *jump_target, int offset = 0) {
+decltype(auto) monkey_patch_addr(const char *function, void *jump_target, int offset = 0) {
     static void *handle = dlopen(nullptr, RTLD_LAZY);
     void *sym = dlsym(handle, function);
-    monkey_patch(sym, jump_target, offset);
+    return monkey_patch(sym, jump_target, offset);
 }
 
-void monkey_patch(const std::string &function, void *handle) {
-	monkey_patch_addr(function.c_str(), dlsym(handle, function.c_str()));
+decltype(auto) monkey_patch(const std::string &function, void *handle) {
+	return monkey_patch_addr(function.c_str(), dlsym(handle, function.c_str()));
 }
 
 template <typename T>
@@ -95,15 +113,23 @@ int main() {
 	std::string before = "before";
 	const std::string *before_p = &before;
 	foo.bar(64, &before_p, 10, nullptr);
+	std::println();
 	void *so = dlopen("override.so", RTLD_NOW);
 	assert(so != nullptr);
 	std::string name = mangle(&Foo::bar, "bar");
 	std::println("name = {}", name);
 	std::println("horror = {}", mangle(&Foo::baz<const int, volatile char>, "baz"));
-	monkey_patch(mangle_fn(&hej), so);
+	std::println("virtual = {}", mangle(&Foo::quux, "quux"));
+	Patch hej_patch = monkey_patch(mangle_fn(&hej), so);
 	monkey_patch(name, so);
+	std::println();
 	hej();
 	std::string after = "after";
 	const std::string *after_p = &after;
 	foo.bar(64, &after_p, 10, nullptr);
+	std::println();
+	for (int i = 0; i < 5; ++i) {
+		hej_patch.swap();
+		hej();
+	}
 }
