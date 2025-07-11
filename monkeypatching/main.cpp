@@ -1,5 +1,6 @@
 #include "base.h"
 
+#include <array>
 #include <cassert>
 #include <cstdint>
 #include <cstring>
@@ -16,15 +17,17 @@ struct AsmJmp {
 	uint64_t addr;
 } __attribute__((packed));
 
+using AsmBytes = std::array<std::byte, sizeof(AsmJmp)>;
+
 class Patch {
 	public:
-		Patch(void *page, void *target, const std::array<std::byte, sizeof(AsmJmp)> &old):
+		Patch(void *page, void *target, const AsmBytes &old):
 			page(page),
 			target(target),
 			old(old) {}
 
 		void swap() {
-			std::array<std::byte, sizeof(AsmJmp)> new_old;
+			AsmBytes new_old;
 			mprotect(page, 2 * PAGE_SIZE, PROT_WRITE);
 			std::memcpy(new_old.data(), target, sizeof(AsmJmp));
 			std::memcpy(target, old.data(), sizeof(AsmJmp));
@@ -35,7 +38,7 @@ class Patch {
 	private:
 		void *page = nullptr;
 		void *target = nullptr;
-		std::array<std::byte, sizeof(AsmJmp)> old{};
+		AsmBytes old{};
 };
 
 Patch monkey_patch(void *sym, void *jump_target, int offset = 0) {
@@ -44,7 +47,7 @@ Patch monkey_patch(void *sym, void *jump_target, int offset = 0) {
     AsmJmp asm_jmp_abs{{0xff, 0x25, 0, 0, 0, 0}, (uint64_t) jump_target};
     mprotect(page, 2 * PAGE_SIZE, PROT_WRITE);
     void *target = (void *) ((uintptr_t) sym + offset);
-	std::array<std::byte, sizeof(AsmJmp)> old;
+	AsmBytes old;
 	std::memcpy(old.data(), target, sizeof(AsmJmp));
     std::memcpy(target, &asm_jmp_abs, sizeof(AsmJmp));
     mprotect(page, 2 * PAGE_SIZE, PROT_READ | PROT_EXEC);
